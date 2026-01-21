@@ -1,0 +1,16 @@
+# IDE 配置文件
+.idea/
+.vscode/
+*.iml
+
+# 编译生成的二进制文件
+shortener
+shortener.exe
+
+# 临时文件
+*.log
+*.tmp
+.DS_Store
+
+# 依赖包 (可选，现代 Go 项目通常不提交 vendor)
+vendor/

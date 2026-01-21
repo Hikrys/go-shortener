@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # 1. MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: shortener-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: go_shortener
+      TZ: Asia/Shanghai
+    ports:
+      - "33060:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./model:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+
+  # 2. Redis
+  redis:
+    image: redis:7.0-alpine
+    container_name: shortener-redis
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "63790:6379"
+
+  # 3. Go Backend
+  shortener-api:
+    build: .
+    container_name: shortener-api
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "8888:8888"
+    environment:
+      TZ: Asia/Shanghai
+      # 通过环境变量覆盖配置文件
+      # 这里的密码 123456 必须和上面 mysql 的密码一致
+      MYSQL_DSN: "root:123456@tcp(mysql:3306)/go_shortener?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai"
+      REDIS_HOST: "redis:6379"
+
+  # 4. Nginx Gateway
+  nginx:
+    image: nginx:alpine
+    container_name: shortener-nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - shortener-api
+    volumes:
+      - ./deploy/nginx/conf_d:/etc/nginx/conf.d
+      - ./static:/usr/share/nginx/html
